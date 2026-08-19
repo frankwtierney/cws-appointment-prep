@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 const repositoryName = process.env.GITHUB_REPOSITORY?.split("/")[1] ?? "cws-appointment-prep";
-const basePath = process.env.GITHUB_ACTIONS === "true" ? `/${repositoryName}` : "";
+const basePath = process.env.GITHUB_ACTIONS === "true" && !process.env.PAGES_CUSTOM_DOMAIN ? `/${repositoryName}` : "";
 
 export const metadata: Metadata = {
   title: "FWS Appointment Builder",

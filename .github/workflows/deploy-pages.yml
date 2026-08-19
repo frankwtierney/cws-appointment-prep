@@ -10,6 +10,9 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  PAGES_CUSTOM_DOMAIN: cws.leep.life
+
 concurrency:
   group: pages
   cancel-in-progress: true
