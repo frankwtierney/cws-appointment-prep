@@ -16,7 +16,7 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .app-header { background: var(--blue); border-bottom: 1px solid rgba(255,255,255,.18); box-shadow: 0 8px 24px rgba(0, 63, 130, .16); }
 .header-inner { width: min(1180px, calc(100% - 40px)); min-height: 78px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .brand { display: flex; align-items: center; gap: 12px; }
-.brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.3); border-radius: 11px; background: #74aa50; color: white; }
+.brand-mark { width: 42px; height: 42px; display: grid; place-items: center; overflow: hidden; border: 1px solid rgba(255,255,255,.3); border-radius: 11px; background: #74aa50 url("/cws-tool-header-icon.svg") center / cover no-repeat; color: white; }
 .brand p, .brand h1 { margin: 0; }
 .brand p { color: rgba(255,255,255,.74); text-transform: uppercase; letter-spacing: .11em; font-size: 10px; font-weight: 800; }
 .brand h1 { color: white; font-size: 18px; letter-spacing: -.02em; }

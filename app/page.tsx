@@ -3,7 +3,7 @@
 import {
   Archive, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, Download,
   FileCheck2, FileDown, Files, FileText, FolderLock, Plus, Save, Settings2, ShieldCheck,
-  Sparkles, Trash2, Upload, Wrench, X,
+  Sparkles, Trash2, Upload, X,
 } from "lucide-react";
 import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from "react";
 
@@ -615,7 +615,7 @@ export default function Home() {
   return (
     <main>
       <header className="app-header"><div className="header-inner">
-        <div className="brand"><div className="brand-mark" aria-hidden="true"><Wrench size={22} strokeWidth={2.5} /></div><div><p>Supervision &amp; Administration Tools</p><h1>CWS Appointment Builder</h1></div></div>
+        <div className="brand"><div className="brand-mark" aria-hidden="true" /><div><p>Supervision &amp; Administration Tools</p><h1>CWS Appointment Builder</h1></div></div>
         <button className="privacy-pill" onClick={() => document.getElementById("privacy-note")?.scrollIntoView({ behavior: "smooth" })}><ShieldCheck size={17} /> Processed only in this browser</button>
       </div></header>
 
