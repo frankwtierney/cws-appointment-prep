@@ -3,7 +3,7 @@
 import {
   Archive, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, Download,
   FileCheck2, FileDown, Files, FileText, FolderLock, Plus, Save, Settings2, ShieldCheck,
-  Sparkles, Trash2, Upload, X,
+  Sparkles, Trash2, Upload, Wrench, X,
 } from "lucide-react";
 import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from "react";
 
@@ -104,6 +104,17 @@ function downloadBlob(blob: Blob, name: string) {
 function escapeCsv(value: string) {
   const safe = value.replace(/^[=+\-@]/, "'$&");
   return `"${safe.replace(/"/g, '""')}"`;
+}
+function makeLogCsv(entries: LogEntry[]) {
+  const headers = ["lastName", "firstName", "studentid", "email", "role", "phone", "employeeTypes", "cwsAward", "centers", "status", "startDate", "endDate"];
+  const rows = entries.map((item) => [
+    item.lastName, item.firstName, item.studentId, "", "", "", item.employeeTypes,
+    item.awardTotal, "", item.status, item.startDate, item.endDate,
+  ]);
+  return [headers, ...rows].map((row) => row.map((value) => escapeCsv(String(value))).join(",")).join("\r\n");
+}
+function makeLogCsvBytes(entries: LogEntry[]) {
+  return new TextEncoder().encode(`\ufeff${makeLogCsv(entries)}`);
 }
 
 async function extractStudentData(bytes: Uint8Array): Promise<StudentData> {
@@ -453,7 +464,7 @@ export default function Home() {
   }
 
   async function downloadSingleOrganizedZip() {
-    if (!generatedBlob) return;
+    if (!generatedBlob || !selectedProfile || !status) return;
     setBusy(true); setError("");
     try {
       const { zipSync } = await import("fflate");
@@ -462,9 +473,15 @@ export default function Home() {
       const archive = {
         [fileName]: bytes,
         [`${makeStudentFolderName(student)}/${fileName}`]: bytes,
+        "FWS_Appointment_Log.csv": makeLogCsvBytes([{
+          ...student, id: editingLogId || `${student.studentId}-${firstDay}-${selectedProfile.id}`,
+          appointmentStatus: status, startDate: firstDay, endDate: selectedProfile.defaultEndDate,
+          entryType: selectedProfile.name, employeeTypes: "CWS", status: "Active",
+          processedAt: new Date().toISOString(), fileName,
+        }]),
       };
       downloadBlob(new Blob([new Uint8Array(zipSync(archive, { level: 6 }))], { type: "application/zip" }), fileName.replace(/\.pdf$/i, ".zip"));
-      setNotice("The organized ZIP includes the PDF at the main level and inside the student’s folder.");
+      setNotice("The organized ZIP includes the PDF, student-folder copy, and CSV appointment log.");
     } catch { setError("The organized ZIP could not be created."); }
     finally { setBusy(false); }
   }
@@ -514,6 +531,7 @@ export default function Home() {
           });
         } catch { storageFailures += 1; }
       }
+      archive["FWS_Appointment_Log.csv"] = makeLogCsvBytes(entries);
       const zipped = zipSync(archive, { level: 6 });
       const dateLabel = batchDefaultStart || batchReadyItems[0]?.startDate || new Date().toISOString().slice(0, 10);
       const zipName = `CWS_Appointments_${dateLabel}.zip`;
@@ -528,13 +546,7 @@ export default function Home() {
   }
 
   function exportLogEntries(entries: LogEntry[], fileName: string) {
-    const headers = ["lastName", "firstName", "studentid", "email", "role", "phone", "employeeTypes", "cwsAward", "centers", "status", "startDate", "endDate"];
-    const rows = entries.map((item) => [
-      item.lastName, item.firstName, item.studentId, "", "", "", item.employeeTypes,
-      item.awardTotal, "", item.status, item.startDate, item.endDate,
-    ]);
-    const csv = [headers, ...rows].map((row) => row.map((value) => escapeCsv(String(value))).join(",")).join("\r\n");
-    downloadBlob(new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" }), fileName);
+    downloadBlob(new Blob(["\ufeff", makeLogCsv(entries)], { type: "text/csv;charset=utf-8" }), fileName);
   }
   function exportLog() { exportLogEntries(log, "FWS_Appointment_Log.csv"); }
   function toggleLogSelection(id: string) {
@@ -557,6 +569,8 @@ export default function Home() {
           while (archive[name]) { name = record.completedFileName.replace(/\.pdf$/i, `_${copy}.pdf`); copy += 1; }
           archive[name] = new Uint8Array(record.completedBytes);
         });
+        const availableIds = new Set(records.map((record) => record.id));
+        archive["FWS_Appointment_Log.csv"] = makeLogCsvBytes(selectedLogEntries.filter((entry) => availableIds.has(entry.id)));
         downloadBlob(new Blob([new Uint8Array(zipSync(archive, { level: 6 }))], { type: "application/zip" }), "CWS_Selected_Appointments.zip");
       }
       const unavailable = selectedLogEntries.length - records.length;
@@ -601,7 +615,7 @@ export default function Home() {
   return (
     <main>
       <header className="app-header"><div className="header-inner">
-        <div className="brand"><div className="brand-mark">FW</div><div><p>Work-study tools</p><h1>FWS Appointment Builder</h1></div></div>
+        <div className="brand"><div className="brand-mark" aria-hidden="true"><Wrench size={22} strokeWidth={2.5} /></div><div><p>Supervision &amp; Administration Tools</p><h1>CWS Appointment Builder</h1></div></div>
         <button className="privacy-pill" onClick={() => document.getElementById("privacy-note")?.scrollIntoView({ behavior: "smooth" })}><ShieldCheck size={17} /> Processed only in this browser</button>
       </div></header>
 
@@ -646,16 +660,17 @@ export default function Home() {
           {formMode === "batch" && batchItems.length > 0 && <article className="card action-card"><div><span className="step-number">3</span><div><h3>Create the completed batch</h3><p>{selectedProfile?.defaultEndDate ? `${batchReadyItems.length} of ${batchItems.length} forms are ready. Forms needing review will be skipped.` : "Choose an Entry Type with a default end date."}</p><label className="zip-option"><input type="checkbox" checked={includeStudentFolders} onChange={(event) => { clearBatchOutput(); setIncludeStudentFolders(event.target.checked); }} /><span><b>Also create student folders</b><small>Duplicates each PDF inside an all-caps LAST NAME, FIRST NAME folder.</small></span></label></div></div><button className="primary-button" disabled={!selectedProfile?.defaultEndDate || !batchReadyItems.length || busy} onClick={() => void generateBatch()}>{busy ? <span className="spinner small" /> : <Archive size={19} />}Create {batchReadyItems.length} PDF{batchReadyItems.length === 1 ? "" : "s"}</button></article>}
         </section>
 
-        <aside className="side-column"><article className="card profile-card"><div className="card-heading compact"><div><span className="icon-box"><Settings2 size={19} /></span><div><h3>Entry Type</h3><p>Saved department information</p></div></div><button className="icon-button" onClick={openNewProfile} aria-label="Create Entry Type"><Plus size={19} /></button></div>
+        <aside className="side-column"><article className="card profile-card"><div className="card-heading compact"><div><span className="icon-box"><Settings2 size={19} /></span><div><h3>Entry Type</h3><p>Saved department information</p></div></div></div>
           {profiles.length ? <><label className="select-label"><span>Apply Entry Type</span><div><select value={selectedProfileId} onChange={(event) => { clearAllOutputs(); setSelectedProfileId(event.target.value); }}>{profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}</select><ChevronDown size={17} /></div></label>
             {selectedProfile && <div className="profile-summary"><strong>{selectedProfile.departmentName}</strong><p>{selectedProfile.departmentPhone || "No phone entered"}</p><dl><div><dt>Entity code</dt><dd>{selectedProfile.entityCode}</dd></div><div><dt>Default end date</dt><dd className={selectedProfile.defaultEndDate ? "" : "missing"}>{selectedProfile.defaultEndDate || "Not set - edit profile"}</dd></div><div><dt>Supervisor</dt><dd>{selectedProfile.supervisorName}</dd></div></dl><button className="secondary-button" onClick={() => setProfileDraft({ ...selectedProfile })}>Edit Entry Type</button></div>}
-            <div className="profile-utilities"><button onClick={exportProfiles}><Download size={15} /> Export</button><button onClick={() => importRef.current?.click()}><Upload size={15} /> Import</button></div></>
+            </>
             : <div className="empty-profile"><span><FolderLock size={23} /></span><strong>No Entry Types yet</strong><p>Save your department information once, then reuse it for each appointment.</p><button className="secondary-button" onClick={openNewProfile}><Plus size={17} /> Create Entry Type</button></div>}
+          <div className="profile-utilities">{profiles.length > 0 && <button onClick={openNewProfile}><Plus size={15} /> New</button>}<button disabled={!profiles.length} onClick={exportProfiles}><Download size={15} /> Export</button><button onClick={() => importRef.current?.click()}><Upload size={15} /> Import</button></div>
           <input ref={importRef} type="file" accept="application/json,.json" hidden onChange={(event) => void importProfiles(event)} />
         </article>
 
           {formMode === "single" && generatedBlob && previewUrl && <article className="card ready-card"><span><FileCheck2 size={24} /></span><h3>PDF ready</h3><p>{makeFileName(student)}</p><button className="primary-button full" onClick={() => downloadBlob(generatedBlob, makeFileName(student))}><Download size={18} /> Download completed PDF</button><button className="secondary-button full organized-zip-button" disabled={busy} onClick={() => void downloadSingleOrganizedZip()}><Archive size={17} /> Download organized ZIP</button><small className="batch-ready-note">Includes a duplicate inside an all-caps student folder</small><a href={previewUrl} target="_blank" rel="noreferrer">Open full-size preview</a></article>}
-          {formMode === "batch" && batchZipBlob && <article className="card ready-card"><span><Archive size={24} /></span><h3>Batch ready</h3><p>{batchZipName}</p><button className="primary-button full" onClick={() => downloadBlob(batchZipBlob, batchZipName)}><Download size={18} /> Download ZIP</button><small className="batch-ready-note">Contains {batchReadyItems.length} completed PDF{batchReadyItems.length === 1 ? "" : "s"}{includeStudentFolders ? " plus organized student-folder copies" : ""}</small></article>}
+          {formMode === "batch" && batchZipBlob && <div className="ready-stack"><article className="card ready-card"><span><Archive size={24} /></span><h3>Batch ready</h3><p>{batchZipName}</p><button className="primary-button full" onClick={() => downloadBlob(batchZipBlob, batchZipName)}><Download size={18} /> Download ZIP</button><small className="batch-ready-note">{batchReadyItems.length} PDF{batchReadyItems.length === 1 ? "" : "s"}{includeStudentFolders ? " • folders" : ""} • CSV included</small></article><article className="card box-upload-card"><span><FolderLock size={25} /></span><div><h3>Upload to UB BOX</h3><p>Upload the PDFs to the secure folder.</p></div><a className="primary-button full" href="https://buffalo.app.box.com/f/46965e074fb640d096695c50a03446ea" target="_blank" rel="noreferrer"><Upload size={18} /> Open UB Box</a></article></div>}
 
         </aside></div>
 

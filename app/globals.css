@@ -16,7 +16,7 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .app-header { background: var(--blue); border-bottom: 1px solid rgba(255,255,255,.18); box-shadow: 0 8px 24px rgba(0, 63, 130, .16); }
 .header-inner { width: min(1180px, calc(100% - 40px)); min-height: 78px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .brand { display: flex; align-items: center; gap: 12px; }
-.brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.3); border-radius: 11px; background: rgba(255,255,255,.14); color: white; font-weight: 850; letter-spacing: -.04em; }
+.brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.3); border-radius: 11px; background: #74aa50; color: white; }
 .brand p, .brand h1 { margin: 0; }
 .brand p { color: rgba(255,255,255,.74); text-transform: uppercase; letter-spacing: .11em; font-size: 10px; font-weight: 800; }
 .brand h1 { color: white; font-size: 18px; letter-spacing: -.02em; }
@@ -61,7 +61,7 @@ button:disabled { cursor: not-allowed; opacity: .52; }
   .workspace-grid:has(.ready-card) .main-column { grid-template-rows: auto auto 1fr; }
   .workspace-grid:has(.ready-card) .side-column { grid-template-rows: auto 1fr; }
   .workspace-grid:has(.ready-card) .action-card,
-  .workspace-grid:has(.ready-card) .ready-card { height: 100%; }
+  .workspace-grid:has(.ready-card) .ready-stack { height: 100%; }
 }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 17px; box-shadow: var(--shadow); }
 .upload-card, .details-card { padding: 24px; }
@@ -181,6 +181,7 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .profile-utilities, .log-actions { display: flex; border-top: 1px solid var(--line); margin-top: 15px; padding-top: 13px; gap: 6px; }
 .profile-utilities button, .log-actions button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; background: transparent; color: var(--muted); font-size: 10px; font-weight: 750; padding: 6px; }
 .profile-utilities button:hover, .log-actions button:hover:not(:disabled) { color: var(--blue); }
+.profile-utilities button:disabled { color: #aab5bd; cursor: not-allowed; }
 .empty-profile { text-align: center; padding: 9px 6px 3px; }
 .empty-profile > span { width: 47px; height: 47px; margin: 0 auto 10px; display: grid; place-items: center; border-radius: 13px; background: var(--blue-pale); color: var(--blue); }
 .empty-profile strong { display: block; font-size: 13px; }
@@ -193,6 +194,13 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .ready-card a { display: inline-block; color: var(--blue); font-size: 10px; font-weight: 750; margin-top: 12px; }
 .organized-zip-button { margin-top: 8px; }
 .batch-ready-note { display: block; color: var(--muted); font-size: 9px; font-weight: 700; margin-top: 12px; }
+.ready-stack { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, .8fr); gap: 18px; }
+.ready-stack .ready-card { height: auto; display: flex; flex-direction: column; justify-content: center; }
+.box-upload-card { padding: 20px; text-align: center; border-color: #c9daea; background: linear-gradient(180deg, #fff 0%, #f5faff 100%); display: flex; flex-direction: column; justify-content: center; }
+.box-upload-card > span { width: 48px; height: 48px; margin: 0 auto 10px; display: grid; place-items: center; border-radius: 14px; background: var(--blue-pale); color: var(--blue); }
+.box-upload-card h3 { margin: 0; color: var(--blue-ink); font-size: 15px; }
+.box-upload-card p { margin: 6px 0 14px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.box-upload-card a { text-decoration: none; }
 .rotate { transform: rotate(180deg); }
 .log-list { display: grid; gap: 0; border-top: 1px solid var(--line); }
 .log-list > div { padding: 10px 2px; border-bottom: 1px solid #edf1f4; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -272,7 +280,7 @@ footer p { margin: 3px 0 0; font-size: 11px; line-height: 1.5; }
   .step-strip { min-width: 0; max-width: 430px; }
   .workspace-grid { grid-template-columns: 1fr; }
   .side-column { grid-template-columns: 1fr 1fr; align-items: start; }
-  .ready-card { grid-column: 1 / -1; }
+  .ready-card, .ready-stack { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
   .header-inner, .page-shell { width: min(100% - 24px, 1180px); }
